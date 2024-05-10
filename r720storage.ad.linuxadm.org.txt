@@ -1,0 +1,111 @@
+12:14 PM 4/30/2024
+
+temp storage
+
+[root@r720storage ~]# parted /dev/sda
+GNU Parted 3.5
+Using /dev/sda
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) p
+Error: /dev/sda: unrecognised disk label
+Model: DELL PERC H710 (scsi)
+Disk /dev/sda: 2000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown
+Disk Flags:
+(parted) n
+Error: /dev/sda: unrecognised disk label
+(parted) mklabel gpt
+(parted) mk
+mklabel  mkpart   mktable
+(parted) mkpart
+Partition name?  []?
+File system type?  [ext2]? lvm
+parted: invalid token: lvm
+File system type?  [ext2]? xfs
+Start? 0%
+End? 100%
+(parted) p
+Model: DELL PERC H710 (scsi)
+Disk /dev/sda: 2000GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  2000GB  2000GB  xfs
+
+(parted)
+
+
+parted /dev/sdb
+root@r720storage ~]# parted /dev/sdb
+GNU Parted 3.5
+Using /dev/sdb
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) mklabel gpt
+(parted) mkpart
+Partition name?  []?
+File system type?  [ext2]? xfs
+Start? 0%
+End? 100%
+
+Model: DELL PERC H710 (scsi)
+Disk /dev/sdb: 8001GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  8001GB  8001GB  xfs
+
+(parted)
+[root@r720storage ~]# pvcreate /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created.
+
+[root@r720storage ~]# vgcreate vg_raid1_72k /dev/sdb1
+  Volume group "vg_raid1_72k" successfully created
+
+[root@r720storage ~]# lvcreate -L 3T -n lv_backup vg_raid1_72k
+  Logical volume "lv_backup" created.
+
+[root@r720storage ~]# mkfs.xfs /dev/vg_raid1_72k/lv_backup
+[root@r720storage ~]# cd /srv/
+mkdir backup
+chown eric.eric backup
+
+[root@r720storage srv]# mount -t xfs /dev/vg_raid1_72k/lv_backup /srv/backup/
+
+[root@r720storage srv]# cat /etc/mtab
+
+
+
+dnf install samba
+[root@r720storage srv]# systemctl start smb
+[root@r720storage srv]# systemctl enable smb
+Created symlink /etc/systemd/system/multi-user.target.wants/smb.service → /usr/lib/systemd/system/smb.service.
+
+
+vim /etc/samba/smb.conf
+
+[backup]
+        comment = temp backup drive
+        path = /srv/backup
+        write list = eric
+        browseable = Yes
+
+[root@r720storage srv]# firewall-cmd --permanent --add-service=samba
+success
+[root@r720storage srv]# firewall-cmd --reload
+success
+
+[root@r720storage srv]# smbpasswd -a eric
+New SMB password:
+Retype new SMB password:
+Added user eric.
+
+
+setsebool -P samba_export_all_rw 1
+[root@r720storage log]# semanage fcontext -a -t samba_share_t '/srv/backup(/.*)?'
+[root@r720storage log]# restorecon -Rv /srv/backup/
+asdf
