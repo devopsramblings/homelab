@@ -109,3 +109,27 @@ setsebool -P samba_export_all_rw 1
 [root@r720storage log]# semanage fcontext -a -t samba_share_t '/srv/backup(/.*)?'
 [root@r720storage log]# restorecon -Rv /srv/backup/
 asdf
+
+
+Install Dell tools
+needs code ready setup first!
+subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+
+https://linux.dell.com/repo/hardware/dsu/
+
+curl -O https://linux.dell.com/repo/hardware/dsu/bootstrap.cgi
+bash bootstrap.cgi
+
+yum install dell-system-update
+
+yum install srvadmin-all
+
+[root@r720storage ~]# /opt/dell/srvadmin/sbin/srvadmin-services.sh start
+[root@r720storage ~]# /opt/dell/srvadmin/sbin/srvadmin-services.sh enable
+
+[root@r720storage ~]# firewall-cmd --zone=public --add-port=1311/tcp --permanent
+success
+[root@r720storage ~]# firewall-cmd --reload
+success
+
+
